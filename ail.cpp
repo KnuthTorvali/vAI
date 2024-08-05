@@ -15,10 +15,13 @@ const int EMBEDDING_SIZE = 128; // Size of Embedding vector
 const int HIDDEN_SIZE = 512; // Size of Hidden layer
 const int OUTPUT_SIZE = 128; // Size of Final print
 const int NUM_HEADS = 8; // Number of MHA
-const int CONTEXT_SIZE = 5; // Size of Context
+const int CONTEXT_SIZE = 120; // Size of Context
 const double LEARNING_RATE = 0.01; // Learning Rate
 const double EPSILON = 1e-10; // Epsilon
 const int EPOCH_NUM = 30; // Number of epoch
+const double BETA1 = 0.9; // BetaA for Adam
+const double BETA2 = 0.999; // BetaB for Adam
+const std::string PAD_TOKEN = "<PAD>"; // Pad token
 
 std::vector<std::vector<double>> generateWeightMatrix(int inputSize, int outputSize) {
     std::vector<std::vector<double>> weightMatrix(inputSize, std::vector<double>(outputSize));
@@ -34,7 +37,7 @@ std::vector<std::vector<double>> generateWeightMatrix(int inputSize, int outputS
 }
 
 std::vector<double> transformEmbedding(const std::vector<double>& inputEmbedding,
-                                       const std::vector<std::vector<double>>& weightMatrix) {
+    const std::vector<std::vector<double>>& weightMatrix) {
     std::vector<double> transformedEmbedding(weightMatrix[0].size(), 0.0);
     for (size_t j = 0; j < weightMatrix[0].size(); ++j) {
         for (size_t i = 0; i < inputEmbedding.size(); ++i) {
@@ -80,6 +83,11 @@ std::vector<double> aggregateEmbeddings(const std::vector<std::string>& tokens,
         if (it != embeddings.end()) {
             for (size_t i = 0; i < EMBEDDING_SIZE; ++i) {
                 aggregated[i] += it->second[i];
+            }
+        }
+        else if (embeddings.find(PAD_TOKEN) != embeddings.end()) {
+            for (size_t i = 0; i < EMBEDDING_SIZE; ++i) {
+                aggregated[i] += embeddings.at(PAD_TOKEN)[i];
             }
         }
     }
@@ -164,44 +172,66 @@ std::string predictNextToken(const std::vector<double>& contextEmbedding,
     return nextToken;
 }
 
+void padAndMask(std::vector<std::string>& tokens, int contextSize) {
+    if (tokens.size() < contextSize) {
+        tokens.insert(tokens.end(), contextSize - tokens.size(), PAD_TOKEN);
+    }
+}
+
 void trainModel(std::unordered_map<std::string, std::vector<double>>& embeddings,
     const std::vector<std::string>& trainingData) {
-    std::unordered_map<std::string, int> tokenToIndex;
+    std::unordered_map<std::string, unsigned int> tokenToIndex;
     for (size_t i = 0; i < trainingData.size(); ++i) {
         tokenToIndex[trainingData[i]] = i;
     }
 
     auto weightMatrix = generateWeightMatrix(HIDDEN_SIZE, OUTPUT_SIZE);
 
+    std::unordered_map<std::string, std::vector<double>> m, v;
+    for (const auto& token : trainingData) {
+        m[token] = std::vector<double>(EMBEDDING_SIZE, 0.0);
+        v[token] = std::vector<double>(EMBEDDING_SIZE, 0.0);
+    }
+
     for (int epoch = 0; epoch < EPOCH_NUM; ++epoch) {
         double totalLoss = 0.0;
         for (size_t i = 0; i < trainingData.size() - CONTEXT_SIZE; ++i) {
             std::vector<std::string> context(trainingData.begin() + i, trainingData.begin() + i + CONTEXT_SIZE);
-            std::string correctToken = trainingData[i + CONTEXT_SIZE];
-            std::vector<double> contextEmbedding = aggregateEmbeddings(context, embeddings);
-            std::vector<double> correctEmbedding = embeddings[correctToken];
+            padAndMask(context, CONTEXT_SIZE);
 
-            auto transformedContextEmbedding = transformEmbedding(contextEmbedding, weightMatrix);
-            auto multiHeadOutput = multiHeadAttention(transformedContextEmbedding, { transformedContextEmbedding }, { transformedContextEmbedding });
-            normalizeEmbedding(multiHeadOutput);
+            if (i + CONTEXT_SIZE < trainingData.size()) {
+                std::string correctToken = trainingData[i + CONTEXT_SIZE];
+                std::vector<double> contextEmbedding = aggregateEmbeddings(context, embeddings);
+                std::vector<double> correctEmbedding = embeddings[correctToken];
 
-            auto predictedEmbedding = softmax(multiHeadOutput);
+                auto transformedContextEmbedding = transformEmbedding(contextEmbedding, weightMatrix);
+                auto multiHeadOutput = multiHeadAttention(transformedContextEmbedding, { transformedContextEmbedding }, { transformedContextEmbedding });
+                normalizeEmbedding(multiHeadOutput);
 
-            std::vector<double> correctEmbeddingOneHot(predictedEmbedding.size(), 0.0);
-            auto it = tokenToIndex.find(correctToken);
-            if (it != tokenToIndex.end() && it->second < correctEmbeddingOneHot.size()) {
-                correctEmbeddingOneHot[it->second] = 1.0;
+                auto predictedEmbedding = softmax(multiHeadOutput);
+
+                std::vector<double> correctEmbeddingOneHot(predictedEmbedding.size(), 0.0);
+                auto it = tokenToIndex.find(correctToken);
+                if (it != tokenToIndex.end() && it->second < correctEmbeddingOneHot.size()) {
+                    correctEmbeddingOneHot[it->second] = 1.0;
+                }
+
+                double loss = crossEntropyLoss(predictedEmbedding, correctEmbeddingOneHot);
+                totalLoss += loss;
+
+                for (size_t j = 0; j < EMBEDDING_SIZE; ++j) {
+                    double g = (predictedEmbedding[j] - correctEmbeddingOneHot[j]);
+                    m[correctToken][j] = BETA1 * m[correctToken][j] + (1 - BETA1) * g;
+                    v[correctToken][j] = BETA2 * v[correctToken][j] + (1 - BETA2) * g * g;
+
+                    double m_hat = m[correctToken][j] / (1 - pow(BETA1, epoch + 1));
+                    double v_hat = v[correctToken][j] / (1 - pow(BETA2, epoch + 1));
+
+                    embeddings[correctToken][j] -= LEARNING_RATE * m_hat / (sqrt(v_hat) + EPSILON);
+                }
+
+                normalizeEmbedding(embeddings[correctToken]);
             }
-
-            double loss = crossEntropyLoss(predictedEmbedding, correctEmbeddingOneHot);
-            totalLoss += loss;
-
-            for (size_t j = 0; j < EMBEDDING_SIZE; ++j) {
-                embeddings[correctToken][j] -= LEARNING_RATE * (predictedEmbedding[j] - correctEmbeddingOneHot[j]);
-                embeddings[correctToken][j] = std::max(embeddings[correctToken][j], 0.0);
-            }
-
-            normalizeEmbedding(embeddings[correctToken]);
         }
         std::cout << "Epoch " << epoch + 1 << " Loss: " << totalLoss / trainingData.size() << "\n";
     }
@@ -212,11 +242,15 @@ void evaluateModel(const std::unordered_map<std::string, std::vector<double>>& e
     int correct = 0;
     for (size_t i = 0; i < testData.size() - CONTEXT_SIZE; ++i) {
         std::vector<std::string> context(testData.begin() + i, testData.begin() + i + CONTEXT_SIZE);
-        std::string correctToken = testData[i + CONTEXT_SIZE];
-        std::vector<double> contextEmbedding = aggregateEmbeddings(context, embeddings);
-        std::string predictedToken = predictNextToken(contextEmbedding, embeddings);
-        if (predictedToken == correctToken) {
-            correct++;
+        padAndMask(context, CONTEXT_SIZE);
+
+        if (i + CONTEXT_SIZE < testData.size()) {
+            std::string correctToken = testData[i + CONTEXT_SIZE];
+            std::vector<double> contextEmbedding = aggregateEmbeddings(context, embeddings);
+            std::string predictedToken = predictNextToken(contextEmbedding, embeddings);
+            if (predictedToken == correctToken) {
+                correct++;
+            }
         }
     }
     std::cout << "Accuracy: " << static_cast<double>(correct) / (testData.size() - CONTEXT_SIZE) * 100 << "%\n";
@@ -256,7 +290,7 @@ int main() {
         "world", "And", "though", "she", "never", "found", "another", "key", "like", "the", "one", "she", "lost", "she", "always",
         "kept", "her", "eyes", "open", "wondering", "if", "someday", "somewhere", "she", "might", "find", "another", "door",
         "to", "another", "world"
-    }; // Example training data
+    }; // Training data example
 
     std::vector<std::string> testData = {
         "Elara", "spent", "many", "days", "exploring", "this", "new", "world", "making", "friends", "and", "uncovering", "its", "mysteries",
@@ -268,7 +302,7 @@ int main() {
         "the", "everyday", "world", "And", "though", "she", "never", "found", "another", "key", "like", "the", "one", "she", "lost",
         "she", "always", "kept", "her", "eyes", "open", "wondering", "if", "someday", "somewhere", "she", "might", "find", "another",
         "door", "to", "another", "world"
-    }; // Example learning test data
+    }; // Test data example
 
     std::unordered_map<std::string, std::vector<double>> embeddings;
     for (const auto& word : trainingData) {
@@ -280,6 +314,8 @@ int main() {
         }
     }
 
+    embeddings[PAD_TOKEN] = std::vector<double>(EMBEDDING_SIZE, 0.0);
+
     trainModel(embeddings, trainingData);
 
     evaluateModel(embeddings, testData);
@@ -289,6 +325,7 @@ int main() {
     std::getline(std::cin, inputSentence);
 
     std::vector<std::string> tokens = tokenize(inputSentence);
+    padAndMask(tokens, CONTEXT_SIZE);
     std::vector<double> contextEmbedding = aggregateEmbeddings(tokens, embeddings);
     std::string nextToken = predictNextToken(contextEmbedding, embeddings);
 
