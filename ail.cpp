@@ -233,7 +233,7 @@ void trainModel(std::unordered_map<std::string, std::vector<double>>& embeddings
                 normalizeEmbedding(embeddings[correctToken]);
             }
         }
-        std::cout << "Epoch " << epoch + 1 << " Loss: " << totalLoss / trainingData.size() << "\n";
+        std::cout << "Epoch " << epoch + 1 << " Loss: " << totalLoss / trainingData.size() << "\n    [ ===================== " << epoch+1 << " / " << EPOCH_NUM << " ]" << "\n";
     }
 }
 
@@ -253,7 +253,9 @@ void evaluateModel(const std::unordered_map<std::string, std::vector<double>>& e
             }
         }
     }
-    std::cout << "Accuracy: " << static_cast<double>(correct) / (testData.size() - CONTEXT_SIZE) * 100 << "%\n";
+
+        double accuracy = static_cast<double>(correct) / (testData.size() - CONTEXT_SIZE) * 100;
+        std::cout << "Accuracy: " << accuracy << "%\n";
 }
 
 int main() {
