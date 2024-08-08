@@ -260,7 +260,7 @@ void evaluateModel(const std::unordered_map<std::string, std::vector<double>>& e
 
 int main() {
 
-    std::cout << "# vAI NLP model version 1.0.3\n\nTraining [ in progress ]\n * This task may take up to 20 minutes\n";
+    std::cout << "# vAI NLP model version 1.0.4\n\nTraining [ in progress ]\n * This task may take up to 20 minutes\n";
 
     std::vector<std::string> trainingData = {
         "I", "went", "to", "the", "store", "to", "buy", "some", "groceries", "The", "weather", "is", "nice", "today", "Let's", "go", "for", "a", "walk",
