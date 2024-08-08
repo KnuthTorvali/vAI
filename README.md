@@ -10,4 +10,4 @@ AI repo for C++ users
 ## TODO  
 - adamw optimizer implementation  
 - Increase the datasets to more than 4096 tokens
-- ...
+- etc
