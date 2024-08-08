@@ -8,6 +8,7 @@ AI repo for C++ users
 > ![image1](image1.png)
 
 ## TODO  
-- adamw optimizer implementation  
 - Increase the datasets to more than 4096 tokens
-- etc
+- Modularization
+- Normalization
+- Optimization
