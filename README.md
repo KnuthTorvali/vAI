@@ -13,5 +13,9 @@ AI repo for C++ users
 - Normalization
 - Optimization  
 
-## Discord Server
+## Discord server
 https://discord.gg/jmKv62wSUc
+- Chat, be active, interact
+- Ask questions, answer
+- Share, share
+**All this on our Discord server, the vAI Discord server**
