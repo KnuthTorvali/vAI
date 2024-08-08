@@ -15,12 +15,12 @@ const int EMBEDDING_SIZE = 128; // Size of Embedding vector
 const int HIDDEN_SIZE = 512; // Size of Hidden layer
 const int OUTPUT_SIZE = 128; // Size of Final print
 const int NUM_HEADS = 8; // Number of MHA
-const int CONTEXT_SIZE = 2048; // Size of Context (64 < x < 4096)
+const int CONTEXT_SIZE = 2048; // Size of Context
 const double LEARNING_RATE = 0.01; // Learning Rate
 const double EPSILON = 1e-10; // Epsilon
 const int EPOCH_NUM = 30; // Number of epoch
-const double BETA1 = 0.9; // BetaA for Adam
-const double BETA2 = 0.999; // BetaB for Adam
+const double BETA1 = 0.9; // BetaA for Adamw
+const double BETA2 = 0.999; // BetaB for Adamw
 const std::string PAD_TOKEN = "<PAD>"; // Pad token
 
 std::vector<std::vector<double>> generateWeightMatrix(int inputSize, int outputSize) {
@@ -233,7 +233,7 @@ void trainModel(std::unordered_map<std::string, std::vector<double>>& embeddings
                 normalizeEmbedding(embeddings[correctToken]);
             }
         }
-        std::cout << "Epoch " << epoch + 1 << " Loss: " << totalLoss / trainingData.size() << "\n    [ ===================== " << epoch+1 << " / " << EPOCH_NUM << " ]" << "\n";
+        std::cout << "Epoch " << epoch + 1 << " Loss: " << totalLoss / trainingData.size() << "\n    [ ===================== " << epoch + 1 << " / " << EPOCH_NUM << " ]" << "\n";
     }
 }
 
