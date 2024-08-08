@@ -15,7 +15,7 @@ const int EMBEDDING_SIZE = 128; // Size of Embedding vector
 const int HIDDEN_SIZE = 512; // Size of Hidden layer
 const int OUTPUT_SIZE = 128; // Size of Final print
 const int NUM_HEADS = 8; // Number of MHA
-const int CONTEXT_SIZE = 1024; // Size of Context
+const int CONTEXT_SIZE = 2048; // Size of Context (64 < x < 4096)
 const double LEARNING_RATE = 0.01; // Learning Rate
 const double EPSILON = 1e-10; // Epsilon
 const int EPOCH_NUM = 30; // Number of epoch
@@ -182,7 +182,7 @@ void trainModel(std::unordered_map<std::string, std::vector<double>>& embeddings
     const std::vector<std::string>& trainingData) {
     std::unordered_map<std::string, unsigned int> tokenToIndex;
     for (size_t i = 0; i < trainingData.size(); ++i) {
-        tokenToIndex[trainingData[i]] = i;
+        tokenToIndex[trainingData[i]] = (int)i;
     }
 
     auto weightMatrix = generateWeightMatrix(HIDDEN_SIZE, OUTPUT_SIZE);
