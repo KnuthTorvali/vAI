@@ -17,5 +17,5 @@ AI repo for C++ users
 https://discord.gg/jmKv62wSUc
 - Chat, be active, interact
 - Ask questions, answer
-- Share, share
+- Share, share  
 **All this on our Discord server, the vAI Discord server**
