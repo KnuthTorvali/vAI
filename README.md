@@ -11,4 +11,7 @@ AI repo for C++ users
 - Increase the datasets to more than 4096 tokens
 - Modularization
 - Normalization
-- Optimization
+- Optimization  
+
+## Discord Server
+https://discord.gg/jmKv62wSUc
