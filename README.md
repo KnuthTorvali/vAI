@@ -12,6 +12,7 @@ AI repo for C++ users
 - Modularization
 - Normalization
 - Optimization  
+- fix the vector error
 
 ## Discord server
 https://discord.gg/jmKv62wSUc
