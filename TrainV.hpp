@@ -14,18 +14,8 @@
 #include <iterator>
 #include <cassert>
 
-// Hyperparameter settings
-const int EMBEDDING_SIZE = 128; // Size of Embedding vector
-const int HIDDEN_SIZE = 512; // Size of Hidden layer
-const int OUTPUT_SIZE = 128; // Size of Final print
-const int NUM_HEADS = 8; // Number of MHA
-const int CONTEXT_SIZE = 2048; // Size of Context
-const double LEARNING_RATE = 0.01; // Learning Rate
-const double EPSILON = 1e-10; // Epsilon
-const int EPOCH_NUM = 30; // Number of epoch
-const double BETA1 = 0.9; // BetaA for Adamw
-const double BETA2 = 0.999; // BetaB for Adamw
-const std::string PAD_TOKEN = "<PAD>"; // Pad token
+//Hyperparameter
+#include "Hyperparameter_Settings"
 
 std::vector<std::vector<double>> generateWeightMatrix(int inputSize, int outputSize) {
     std::vector<std::vector<double>> weightMatrix(inputSize, std::vector<double>(outputSize));
@@ -228,12 +218,12 @@ void trainModel(std::unordered_map<std::string, std::vector<double>>& embeddings
                         correctEmbeddingOneHot[index] = 1.0;
                     }
                     else {
-                        std::cerr << "E: Index out of bounds for predictedEmbedding. Index: " << index << "\n";
+                        std::cerr << "Warning: Index out of bounds for predictedEmbedding. Index: " << index << "\n";
                         return;
                     }
                 }
                 else {
-                    std::cerr << "E: correctToken not found in tokenToIndex.\n";
+                    std::cerr << "Warning: correctToken not found in tokenToIndex.\n";
                     return;
                 }
 
