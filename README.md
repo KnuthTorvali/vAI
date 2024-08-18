@@ -3,7 +3,7 @@ AI repo for C++ users
 
 `1` ` TrainV.hpp `
 > **TrainV** : NLP model (Transformer & adamw optimizer) header file  
->  [go to trainV source](trainV.hpp) Lastest version : 1.0.4
+>  [go to trainV source](TrainV.hpp) Lastest version : 1.0.4
 >  
 > ![image1](image1.png)
 
