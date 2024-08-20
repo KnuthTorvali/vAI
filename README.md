@@ -8,10 +8,10 @@ AI repo for C++ users
 > ![image1](image1.png)
 
 ## TODO  
-- Increase the datasets to more than 4096 tokens
 - Normalization
 - Optimization  
 - fix the vector error
+- etc  
 
 ## Discord server
 https://discord.gg/jmKv62wSUc
